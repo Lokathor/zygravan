@@ -1,0 +1,20 @@
+[package]
+name = "zygravan"
+version = "0.0.0"
+edition = "2021"
+repository = "https://github.com/Lokathor/zygravan"
+license = "AGPL-3.0-only"
+publish = false
+
+[dependencies]
+voladdress = "1"
+
+[profile.dev]
+panic = "abort"
+opt-level = 3
+lto = true
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+lto = true
