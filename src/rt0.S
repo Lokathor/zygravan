@@ -68,7 +68,8 @@ call_to_rust_main:
 .section .iwram
 .arm
 rt_irq_handler:
-  @ assumed: r0 = 0x0400_0000 when the BIOS calls this  
+  @ assumed: r0 = 0x0400_0000 when the BIOS calls this
+  mov   r0, #0x04000000
 
   add   r2, r0, #0x200
   ldr   r0, [r2]
