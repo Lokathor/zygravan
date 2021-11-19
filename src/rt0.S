@@ -82,6 +82,7 @@ rt_irq_handler:
   strh  r1, [r3, #-8]
   
   ldr   r1, =RUST_IRQ_HANDLER
+  ldr   r1, [r1]
   cmp   r1, #0
   beq   .L_end_of_rt_irq
 
