@@ -4,6 +4,9 @@ use crate::macros::{
   const_new, u16_bool_field, u16_enum_field, u16_value_field,
 };
 
+mod bios;
+pub use bios::*;
+
 #[repr(u16)]
 pub enum VideoMode {
   VideoMode0 = 0,
@@ -94,28 +97,6 @@ impl From<Keys> for u16 {
 #[must_use]
 pub fn get_keys() -> Keys {
   KEYINPUT.read().into()
-}
-
-/// Works as per [`IntrWait`], but always discards old flags, and then waits for
-/// a VBlank interrupt.
-#[inline]
-#[allow(non_snake_case)]
-pub fn VBlankIntrWait() {
-  const SWI_NUM: usize = 0x05;
-  #[cfg(target_feature = "thumb-mode")]
-  const SWI_COMMENT: usize = SWI_NUM;
-  #[cfg(not(target_feature = "thumb-mode"))]
-  const SWI_COMMENT: usize = SWI_NUM << 16;
-  unsafe {
-    asm!(
-      "swi #{n}",
-      n = const SWI_COMMENT,
-      out("r0") _,
-      out("r1") _,
-      out("r3") _,
-      options(preserves_flags),
-    )
-  };
 }
 
 pub const BACKDROP: VolAddress<Color, Safe, Safe> =

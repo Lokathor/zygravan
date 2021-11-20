@@ -4,13 +4,15 @@
 .arm
 __asm_entry:
   b asm_init
-.space 188
+  @ gbafix fills the following space in with proper header data
+  @ if we decide to make the full rom.
+  .space 188
 
 asm_init:
   @ Pin the DMA3 base address for use in the next 2 operations.
   ldr  r4, =0x040000D4
 
-copy_data_from_rom_to_iwram:
+  copy_data_from_rom_to_iwram:
   ldr r0, =__data_start
   ldr r1, =__data_end
   ldr r2, =__data_position_in_rom
