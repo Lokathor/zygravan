@@ -2,7 +2,7 @@
 
 /// `swi #0x05`
 ///
-/// Works as per [`IntrWait`], but always discards old flags, and then waits for
+/// Works as per `IntrWait`, but always discards old flags, and then waits for
 /// a VBlank interrupt.
 #[inline]
 pub fn VBlankIntrWait() {
