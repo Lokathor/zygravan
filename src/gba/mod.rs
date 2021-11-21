@@ -124,6 +124,24 @@ impl Color {
   pub const fn from_bits(u: u16) -> Self {
     Self(u)
   }
+  //
+  pub const BLACK: Self = Self::from_rgb(0, 0, 0);
+  pub const RED: Self = Self::from_rgb(31, 0, 0);
+  pub const GREEN: Self = Self::from_rgb(0, 31, 0);
+  pub const YELLOW: Self = Self::from_rgb(31, 31, 0);
+  pub const BLUE: Self = Self::from_rgb(0, 0, 31);
+  pub const MAGENTA: Self = Self::from_rgb(31, 0, 31);
+  pub const CYAN: Self = Self::from_rgb(0, 31, 31);
+  pub const WHITE: Self = Self::from_rgb(31, 31, 31);
+  //
+  pub const DIM_BLACK: Self = Self::from_rgb(10, 10, 10);
+  pub const DIM_RED: Self = Self::from_rgb(21, 0, 0);
+  pub const DIM_GREEN: Self = Self::from_rgb(0, 21, 0);
+  pub const DIM_YELLOW: Self = Self::from_rgb(21, 21, 0);
+  pub const DIM_BLUE: Self = Self::from_rgb(0, 0, 21);
+  pub const DIM_MAGENTA: Self = Self::from_rgb(21, 0, 21);
+  pub const DIM_CYAN: Self = Self::from_rgb(0, 21, 21);
+  pub const DIM_WHITE: Self = Self::from_rgb(21, 21, 21);
 }
 impl From<u16> for Color {
   #[inline]
@@ -260,17 +278,46 @@ pub type TextScreenblock = VolBlock<TextScreenEntry, Safe, Safe, { 32 * 32 }>;
 /// Gets a screenblock
 ///
 /// Note: There's 8 screenblocks to a charblock.
-pub const fn screenblock<const N: usize>() -> TextScreenblock {
+pub const fn text_screenblock<const N: usize>() -> TextScreenblock {
   assert!(N < 32);
   unsafe {
     VolBlock::new(0x0600_0000 + N * size_of::<[TextScreenEntry; 32 * 32]>())
   }
 }
 
-pub type AffineScreenblock0 = [u8; 16 * 16];
-pub type AffineScreenblock1 = [u8; 32 * 32];
-pub type AffineScreenblock2 = [u8; 64 * 64];
-pub type AffineScreenblock3 = [u8; 128 * 128];
+pub type AffineScreenblockS0 = VolBlock<u8, Safe, Safe, { 16 * 16 }>;
+pub type AffineScreenblockS1 = VolBlock<u8, Safe, Safe, { 32 * 32 }>;
+pub type AffineScreenblockS2 = VolBlock<u8, Safe, Safe, { 64 * 64 }>;
+pub type AffineScreenblockS3 = VolBlock<u8, Safe, Safe, { 128 * 128 }>;
+
+/// `N` in `0..32`
+pub const fn affine_screenblock_s0<const N: usize>() -> AffineScreenblockS0 {
+  assert!(N < 32);
+  unsafe {
+    VolBlock::new(0x0600_0000 + N * size_of::<[TextScreenEntry; 32 * 32]>())
+  }
+}
+/// `N` in `0..32`
+pub const fn affine_screenblock_s1<const N: usize>() -> AffineScreenblockS1 {
+  assert!(N < 32);
+  unsafe {
+    VolBlock::new(0x0600_0000 + N * size_of::<[TextScreenEntry; 32 * 32]>())
+  }
+}
+/// `N` in `0..30`
+pub const fn affine_screenblock_s2<const N: usize>() -> AffineScreenblockS2 {
+  assert!(N < 30);
+  unsafe {
+    VolBlock::new(0x0600_0000 + N * size_of::<[TextScreenEntry; 32 * 32]>())
+  }
+}
+/// `N` in `0..24`
+pub const fn affine_screenblock_s3<const N: usize>() -> AffineScreenblockS3 {
+  assert!(N < 24);
+  unsafe {
+    VolBlock::new(0x0600_0000 + N * size_of::<[TextScreenEntry; 32 * 32]>())
+  }
+}
 
 pub fn place_cp437_data(block: Charblock4) {
   // TODO: make this need only 256xTile4 not a whole charblock.
