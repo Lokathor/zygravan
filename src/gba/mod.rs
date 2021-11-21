@@ -16,7 +16,7 @@ pub enum VideoMode {
   VideoMode4 = 4,
   VideoMode5 = 5,
 }
-use voladdress::{Safe, VolAddress};
+use voladdress::{Safe, VolAddress, VolBlock};
 pub use VideoMode::*;
 
 #[derive(Debug, Clone, Copy)]
@@ -197,3 +197,38 @@ extern "C" {
 pub fn set_irq_handler(opt_fn: Option<RustIrqFn>) {
   unsafe { RUST_IRQ_HANDLER.write(opt_fn) }
 }
+
+pub const BG_PALETTE: VolBlock<Color, Safe, Safe, 256> =
+  unsafe { VolBlock::new(0x0500_0000) };
+
+pub const BG0CNT: VolAddress<BgControl, Safe, Safe> =
+  unsafe { VolAddress::new(0x0400_0008) };
+pub const BG1CNT: VolAddress<BgControl, Safe, Safe> =
+  unsafe { VolAddress::new(0x0400_000A) };
+pub const BG2CNT: VolAddress<BgControl, Safe, Safe> =
+  unsafe { VolAddress::new(0x0400_000C) };
+pub const BG3CNT: VolAddress<BgControl, Safe, Safe> =
+  unsafe { VolAddress::new(0x0400_000E) };
+
+#[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
+pub struct BgControl(u16);
+impl BgControl {
+  const_new!();
+  u16_value_field!(0 - 1, z_index, with_z_index);
+  u16_value_field!(2 - 3, charblock, with_charblock);
+  u16_bool_field!(6, mosaic, with_mosaic);
+  u16_bool_field!(7, is_8bpp, with_8bpp);
+  u16_value_field!(8 - 12, screenblock, with_screenblock);
+  u16_bool_field!(13, affine_wrap, with_affine_wrap);
+  u16_value_field!(14 - 15, screen_size, with_screen_size);
+}
+
+/*
+Internal Screen Size (dots) and size of BG Map (bytes):
+  Value  Text Mode (w,h)   Affine Mode
+  0      256x256 (2K)      128x128   (256 bytes)
+  1      512x256 (4K)      256x256   (1K)
+  2      256x512 (4K)      512x512   (4K)
+  3      512x512 (8K)      1024x1024 (16K)
+*/

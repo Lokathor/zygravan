@@ -7,7 +7,8 @@ use core::mem::size_of_val;
 use zygravan::gba::{
   get_keys, BitUnPack, Color, DisplayControl, DisplayStatus,
   HuffUnCompReadNormal, IrqBits, LZ77UnCompReadNormalWrite16bit, UnPackInfo,
-  VBlankIntrWait, VideoMode::VideoMode3, BACKDROP, DISPCNT, DISPSTAT, IE, IME,
+  VBlankIntrWait, VideoMode::VideoMode3, BACKDROP, BG_PALETTE, DISPCNT,
+  DISPSTAT, IE, IME,
 };
 
 #[panic_handler]
@@ -29,9 +30,9 @@ extern "C" fn main() -> ! {
 
   // unpack the tile data
   unsafe {
-    BACKDROP.add(1).write(Color::from_rgb(31, 31, 31));
     LZ77UnCompReadNormalWrite16bit(CP437.as_ptr(), 0x06000000 as _);
   }
+  BG_PALETTE.index(1).write(Color::from_rgb(31, 31, 31));
 
   DISPSTAT.write(DisplayStatus::new().with_vblank_irq(true));
   IE.write(IrqBits::new().with_vblank(true));
@@ -60,6 +61,7 @@ extern "C" fn main() -> ! {
 ///
 /// * Data is lz77 compressed, decompress with
 ///   [`LZ77UnCompReadNormalWrite16bit`]
+/// * Final output size is 256 tiles (4bpp).
 const CP437: &[u32] = &[
   0x00200010, 0xF0000030, 0x10059001, 0x42011111, 0x01060001, 0x20101001,
   0x111E1107, 0x01100110, 0x1B101A00, 0x73111F10, 0x10010011, 0x00081019,
