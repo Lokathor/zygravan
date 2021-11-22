@@ -1,10 +1,12 @@
-name: Release
+name: Release The ROM
 
 on:
   push:
     branches:
       - 'main'
-  release:
+
+jobs:
+  release_the_rom:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
