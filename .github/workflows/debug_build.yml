@@ -10,6 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          default: true
+
       - name: Get ARM Binutils
         run: sudo apt-get install binutils-arm-none-eabi --yes
 
