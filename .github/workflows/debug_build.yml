@@ -16,6 +16,9 @@ jobs:
           profile: minimal
           default: true
 
+      - name: Get Rust-src
+        run: rustup component add rust-src
+
       - name: Get ARM Binutils
         run: sudo apt-get install binutils-arm-none-eabi --yes
 
