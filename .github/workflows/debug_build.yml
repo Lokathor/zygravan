@@ -1,9 +1,11 @@
 name: Release
 
 on:
-  push:
-    branches: {}
-  release:
+  push: {}
+  pull_request: {}
+
+jobs:
+  debug_build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
