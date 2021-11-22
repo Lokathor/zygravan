@@ -7,7 +7,7 @@ use core::mem::size_of_val;
 use zygravan::gba::{
   charblock4, get_keys, place_cp437_data, text_screenblock, BgControl,
   BitUnPack, Color, DisplayControl, DisplayStatus, HuffUnCompReadNormal,
-  IrqBits, LZ77UnCompReadNormalWrite16bit, TextScreenEntry, UnPackInfo,
+  IrqBits, Keys, LZ77UnCompReadNormalWrite16bit, TextScreenEntry, UnPackInfo,
   VBlankIntrWait, VideoMode::VideoMode3, BACKDROP, BG0CNT, BG0_X, BG0_Y,
   BG1CNT, BG_PALETTE, DISPCNT, DISPSTAT, IE, IME,
 };
@@ -101,6 +101,8 @@ extern "C" fn main() -> ! {
   let mut x_off = 0_u16;
   let mut y_off = 0_u16;
 
+  let mut last_k = Keys::default();
+
   // primary loop
   loop {
     // the user input
@@ -119,6 +121,21 @@ extern "C" fn main() -> ! {
     if k.up() {
       y_off = y_off.wrapping_add(1);
     }
+    if k.l() & !last_k.l() {
+      y_off = y_off.wrapping_add(8);
+    }
+    if k.r() & !last_k.r() {
+      y_off = y_off.wrapping_sub(8);
+    }
+    last_k = k;
+
+    /*
+    Notes:
+    Each screenblock is 32x32 in tiles.
+    The display itself is 30x20 in tiles (240x160 px)
+    The screenblock will wrap around
+    So we can do a rolling output in a single screenblock.
+    */
 
     // wait for v_blank to begin
     VBlankIntrWait();

@@ -67,7 +67,7 @@ pub struct KeysLowActive(u16);
 pub const KEYINPUT: VolAddress<KeysLowActive, Safe, ()> =
   unsafe { VolAddress::new(0x0400_0130) };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct Keys(u16);
 impl Keys {

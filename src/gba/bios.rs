@@ -33,9 +33,7 @@ pub struct UnPackInfo {
 
 /// `swi #0x10`
 #[inline]
-pub unsafe fn BitUnPack(
-  src: *const u8, dest: *mut u32, info: *const UnPackInfo,
-) {
+pub unsafe fn BitUnPack(src: *const u8, dest: *mut u32, info: &UnPackInfo) {
   const SWI_NUM: usize = 0x10;
   #[cfg(target_feature = "thumb-mode")]
   const SWI_COMMENT: usize = SWI_NUM;
