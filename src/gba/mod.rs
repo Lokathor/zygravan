@@ -204,9 +204,12 @@ impl<T> GbaCell<T> {
   pub const unsafe fn new(t: T) -> Self {
     Self(UnsafeCell::new(t))
   }
+  #[inline]
+  #[must_use]
   pub fn read(&self) -> T {
     unsafe { self.0.get().read_volatile() }
   }
+  #[inline]
   pub fn write(&self, t: T) {
     unsafe { self.0.get().write_volatile(t) }
   }
@@ -272,6 +275,8 @@ pub type Charblock4 = VolBlock<Tile4, Safe, Safe, 512>;
 pub type Tile8 = [u32; (8 * 8 * 8) / 32];
 pub type Charblock8 = VolBlock<Tile8, Safe, Safe, 256>;
 
+#[inline]
+#[must_use]
 pub const fn charblock4<const N: usize>() -> Charblock4 {
   assert!(N < 6);
   unsafe { VolBlock::new(0x0600_0000 + N * size_of::<[Tile4; 512]>()) }
@@ -282,6 +287,8 @@ pub type TextScreenblock = VolBlock<TextScreenEntry, Safe, Safe, { 32 * 32 }>;
 /// Gets a screenblock
 ///
 /// Note: There's 8 screenblocks to a charblock.
+#[inline]
+#[must_use]
 pub const fn text_screenblock<const N: usize>() -> TextScreenblock {
   assert!(N < 32);
   unsafe {
@@ -295,6 +302,8 @@ pub type AffineScreenblockS2 = VolBlock<u8, Safe, Safe, { 64 * 64 }>;
 pub type AffineScreenblockS3 = VolBlock<u8, Safe, Safe, { 128 * 128 }>;
 
 /// `N` in `0..32`
+#[inline]
+#[must_use]
 pub const fn affine_screenblock_s0<const N: usize>() -> AffineScreenblockS0 {
   assert!(N < 32);
   unsafe {
@@ -302,6 +311,8 @@ pub const fn affine_screenblock_s0<const N: usize>() -> AffineScreenblockS0 {
   }
 }
 /// `N` in `0..32`
+#[inline]
+#[must_use]
 pub const fn affine_screenblock_s1<const N: usize>() -> AffineScreenblockS1 {
   assert!(N < 32);
   unsafe {
@@ -309,6 +320,8 @@ pub const fn affine_screenblock_s1<const N: usize>() -> AffineScreenblockS1 {
   }
 }
 /// `N` in `0..30`
+#[inline]
+#[must_use]
 pub const fn affine_screenblock_s2<const N: usize>() -> AffineScreenblockS2 {
   assert!(N < 30);
   unsafe {
@@ -316,6 +329,8 @@ pub const fn affine_screenblock_s2<const N: usize>() -> AffineScreenblockS2 {
   }
 }
 /// `N` in `0..24`
+#[inline]
+#[must_use]
 pub const fn affine_screenblock_s3<const N: usize>() -> AffineScreenblockS3 {
   assert!(N < 24);
   unsafe {
