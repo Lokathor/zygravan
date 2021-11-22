@@ -10,7 +10,7 @@ on:
       - uses: actions/checkout@v2
 
       - name: Get ARM Binutils
-        run: sudo apt-get install binutils-arm-none-eabi -Y
+        run: sudo apt-get install binutils-arm-none-eabi --yes
 
       - name: Get gbafix
         run: cargo install gbafix
