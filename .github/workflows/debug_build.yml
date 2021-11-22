@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push: {}
+  pull_request: {}
+
+jobs:
+  debug_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          default: true
+
+      - name: Get Rust-src
+        run: rustup component add rust-src
+
+      - name: Get ARM Binutils
+        run: sudo apt-get install binutils-arm-none-eabi --yes
+
+      - name: Build the debug ELF
+        run: cargo build
