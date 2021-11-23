@@ -41,7 +41,10 @@ jobs:
       - name: publish release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: Latest
+          prerelease: true
           files: target/zygravan.zip
+          fail_on_unmatched_files: true
           name: ${{ env.GITHUB_SHA }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
