@@ -30,20 +30,20 @@ jobs:
         run: cargo build --release
       
       - name: Objcopy ELF into raw binary
-        run: arm-none-eabi-objcopy --output-target binary target/thumbv4t-none-eabi/release/main target/zygravan.gba
+        run: arm-none-eabi-objcopy --output-target binary target/thumbv4t-none-eabi/release/main zygravan.gba
       
       - name: Patch header data of raw binary
-        run: gbafix target/zygravan.gba
+        run: gbafix zygravan.gba
 
       - name: Zip the ROM
-        run: zip -9 target/zygravan target/zygravan.gba
+        run: zip -9 zygravan zygravan.gba
 
       - name: publish release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: Latest
           prerelease: true
-          files: target/zygravan.zip
+          files: zygravan.zip
           fail_on_unmatched_files: true
           name: ${{ env.GITHUB_SHA }}
         env:
