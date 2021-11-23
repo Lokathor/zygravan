@@ -41,7 +41,7 @@ jobs:
       - name: publish release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: Latest
+          tag_name: latest
           prerelease: true
           files: zygravan.zip
           fail_on_unmatched_files: true
