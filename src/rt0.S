@@ -4,9 +4,13 @@
 .arm
 __asm_entry:
   b asm_init
-  @ gbafix fills the following space in with proper header data
-  @ if we decide to make the full rom.
-  .space 188
+
+  @ gbafix fills the following blank space in with proper header data when we
+  @ decide to make the full rom. Even though we are building a standard rom, we
+  @ zero the area all the way out to the end of the multiboot header so that
+  @ mGBA doesn't potentially get confused.
+
+  .space 0xE0
 
 asm_init:
   @ Pin the DMA3 base address for use in the next 2 operations.
