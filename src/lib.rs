@@ -7,3 +7,6 @@ pub use bit_utils::*;
 mod macros;
 
 pub mod gba;
+
+pub mod voladdress_next;
+pub use voladdress_next::*;
