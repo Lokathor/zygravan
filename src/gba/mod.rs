@@ -1,9 +1,9 @@
 use core::{cell::UnsafeCell, mem::size_of};
-use voladdress::{Safe, VolAddress, VolBlock};
+use voladdress::{Safe, VolAddress, VolBlock, VolSeries};
 
 use crate::{
   macros::{const_new, u16_bool_field, u16_enum_field, u16_value_field},
-  VolRegion,
+  Fx, VolRegion,
 };
 
 mod bios;
@@ -390,3 +390,84 @@ pub const BG3_X: VolAddress<u16, (), Safe> =
   unsafe { VolAddress::new(0x0400_001C) };
 pub const BG3_Y: VolAddress<u16, (), Safe> =
   unsafe { VolAddress::new(0x0400_001E) };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u16)]
+pub enum ObjMode {
+  Normal = (0 << 10),
+  SemiTransparent = (1 << 10),
+  Window = (2 << 10),
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u16)]
+pub enum ObjShape {
+  Square = (0 << 14),
+  Horizontal = (1 << 14),
+  Vertical = (2 << 14),
+}
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct ObjAttr0(u16);
+impl ObjAttr0 {
+  const_new!();
+  u16_value_field!(0 - 7, y, with_y);
+  u16_bool_field!(8, affine, with_affine);
+  u16_bool_field!(9, disabled, with_disabled);
+  u16_bool_field!(9, affine_double_size, with_affine_double_size);
+  u16_enum_field!(10 - 11: ObjMode, mode, with_mode);
+  u16_bool_field!(12, mosaic, with_mosaic);
+  u16_bool_field!(13, is_8bpp, with_is_8bpp);
+  u16_enum_field!(14 - 15: ObjShape, shape, with_shape);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct ObjAttr1(u16);
+impl ObjAttr1 {
+  const_new!();
+  u16_value_field!(0 - 8, x, with_x);
+  u16_value_field!(9 - 13, affine_index, with_affine_index);
+  u16_bool_field!(12, hflip, with_hflip);
+  u16_bool_field!(13, vflip, with_vflip);
+  u16_value_field!(14 - 15, obj_size, with_obj_size);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(transparent)]
+pub struct ObjAttr2(u16);
+impl ObjAttr2 {
+  const_new!();
+  u16_value_field!(0 - 9, base_tile, with_base_tile);
+  u16_value_field!(10 - 11, z_index, with_z_index);
+  u16_value_field!(12 - 15, palbank, with_palbank);
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[repr(C)]
+pub struct Obj(ObjAttr0, ObjAttr1, ObjAttr2);
+
+pub const OAM: VolSeries<Obj, Safe, Safe, 128, { size_of::<[u16; 4]>() }> =
+  unsafe { VolSeries::new(0x0700_0000) };
+
+#[rustfmt::skip]
+pub const OAM0: VolSeries<ObjAttr0, Safe, Safe, 128, { size_of::<[u16; 4]>() }> =
+  unsafe { VolSeries::new(0x0700_0000) };
+#[rustfmt::skip]
+pub const OAM1: VolSeries<ObjAttr1, Safe, Safe, 128, { size_of::<[u16; 4]>() }> =
+  unsafe { VolSeries::new(0x0700_0002) };
+#[rustfmt::skip]
+pub const OAM2: VolSeries<ObjAttr2, Safe, Safe, 128, { size_of::<[u16; 4]>() }> =
+  unsafe { VolSeries::new(0x0700_0004) };
+
+#[rustfmt::skip]
+pub const PA: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
+  unsafe { VolSeries::new(0x0700_0006) };
+#[rustfmt::skip]
+pub const PB: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
+  unsafe { VolSeries::new(0x0700_000E) };
+#[rustfmt::skip]
+pub const PC: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
+  unsafe { VolSeries::new(0x0700_0016) };
+#[rustfmt::skip]
+pub const PD: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
+  unsafe { VolSeries::new(0x0700_001E) };
