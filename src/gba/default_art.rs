@@ -1,11 +1,20 @@
-use crate::gba::{Charblock4, LZ77UnCompReadNormalWrite16bit};
+use voladdress::Safe;
 
-pub fn place_cp437_data(block: Charblock4) {
+use crate::{
+  gba::{LZ77UnCompReadNormalWrite16bit, Tile4},
+  VolRegion,
+};
+
+/// Requires 256 tiles of output space.
+pub fn decompress_cp437_data_to(region: VolRegion<Tile4, Safe, Safe>) {
+  if region.len() < (16 * 16) {
+    panic!("insufficient output space.");
+  }
   // TODO: make this need only 256xTile4 not a whole charblock.
   unsafe {
     LZ77UnCompReadNormalWrite16bit(
       CP437.as_ptr(),
-      block.index(0).as_usize() as _,
+      region.index(0).as_usize() as _,
     );
   }
   // 16x16 Tile4 compressed with LZ77

@@ -1,8 +1,9 @@
 use core::{cell::UnsafeCell, mem::size_of};
 use voladdress::{Safe, VolAddress, VolBlock};
 
-use crate::macros::{
-  const_new, u16_bool_field, u16_enum_field, u16_value_field,
+use crate::{
+  macros::{const_new, u16_bool_field, u16_enum_field, u16_value_field},
+  VolRegion,
 };
 
 mod bios;
@@ -270,16 +271,48 @@ impl TextScreenEntry {
 }
 
 pub type Tile4 = [u32; (4 * 8 * 8) / 32];
-pub type Charblock4 = VolBlock<Tile4, Safe, Safe, 512>;
-
 pub type Tile8 = [u32; (8 * 8 * 8) / 32];
-pub type Charblock8 = VolBlock<Tile8, Safe, Safe, 256>;
 
-#[inline]
-#[must_use]
-pub const fn charblock4<const N: usize>() -> Charblock4 {
-  assert!(N < 6);
-  unsafe { VolBlock::new(0x0600_0000 + N * size_of::<[Tile4; 512]>()) }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[repr(transparent)]
+pub struct BgCharblock(usize);
+impl BgCharblock {
+  /// Makes a new background charblock.
+  ///
+  /// ## Panics
+  /// * If your input is 4 or more.
+  #[inline]
+  #[must_use]
+  pub const fn new(n: usize) -> Self {
+    if n < 4 {
+      Self(n)
+    } else {
+      panic!("illegal bg charblock value")
+    }
+  }
+  #[inline]
+  #[must_use]
+  pub const fn tiles4(self) -> VolRegion<Tile4, Safe, Safe> {
+    let len = match self.0 {
+      0 | 1 | 2 => 1024,
+      3 => 512,
+      _ => panic!("illegal charblock value"),
+    };
+    let addr = unsafe { VolAddress::new(0x0600_0000 + ((16 * 1024) * self.0)) };
+    unsafe { VolRegion::from_raw_parts(addr, len) }
+  }
+  #[inline]
+  #[must_use]
+  pub const fn tiles8(self) -> VolRegion<Tile8, Safe, Safe> {
+    let len = match self.0 {
+      0 | 1 => 1024,
+      2 => 512,
+      3 => 256,
+      _ => panic!("illegal charblock value"),
+    };
+    let addr = unsafe { VolAddress::new(0x0600_0000 + ((16 * 1024) * self.0)) };
+    unsafe { VolRegion::from_raw_parts(addr, len) }
+  }
 }
 
 pub type TextScreenblock = VolBlock<TextScreenEntry, Safe, Safe, { 32 * 32 }>;

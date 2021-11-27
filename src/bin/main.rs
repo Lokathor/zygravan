@@ -4,13 +4,7 @@
 
 use core::mem::size_of_val;
 
-use zygravan::gba::{
-  charblock4, get_keys, place_cp437_data, text_screenblock, BgControl,
-  BitUnPack, Color, DisplayControl, DisplayStatus, HuffUnCompReadNormal,
-  IrqBits, Keys, LZ77UnCompReadNormalWrite16bit, TextScreenEntry, UnPackInfo,
-  VBlankIntrWait, VideoMode::VideoMode3, BACKDROP, BG0CNT, BG0_X, BG0_Y,
-  BG1CNT, BG_PALETTE, DISPCNT, DISPSTAT, IE, IME,
-};
+use zygravan::gba::*;
 
 #[panic_handler]
 fn panic_handler(_info: &core::panic::PanicInfo) -> ! {
@@ -26,37 +20,15 @@ extern "C" fn irq_handler(_bits: IrqBits) {
 
 #[no_mangle]
 extern "C" fn main() -> ! {
-  // system setup
+  //
+  decompress_cp437_data_to(BgCharblock::new(0).tiles4());
+
+  //
   let pink = Color::from_rgb(28, 15, 15);
   for x in 0..16 {
     BG_PALETTE.index(0 + 16 * x).write(pink);
   }
 
-  place_cp437_data(charblock4::<0>());
-  /*
-  // this copies the data into the second half of
-  // the same charblock with each pixel that was a 1 being a 2 instead.
-  // theoretically we could have 7 sets of tiles
-  // (and a little space for screenblocks)
-  // and each tile set could have its own possible 16 colors.
-  // but... probably we don't want to do any of that.
-  let cb = charblock4::<0>();
-  for i in 0..256 {
-    let mut tile4 = cb.index(i).read();
-    for u in tile4.iter_mut() {
-      let mut mask = 0b1111;
-      let mut extr = 0b0001;
-      while mask != 0 {
-        if *u & mask != 0 {
-          *u += extr;
-        }
-        mask <<= 4;
-        extr <<= 4;
-      }
-    }
-    cb.index(i + 256).write(tile4);
-  }
-  */
   //
   BG_PALETTE.index(1 + 16 * 0).write(Color::BLACK);
   BG_PALETTE.index(1 + 16 * 1).write(Color::RED);
@@ -75,6 +47,7 @@ extern "C" fn main() -> ! {
   BG_PALETTE.index(1 + 16 * 14).write(Color::DIM_CYAN);
   BG_PALETTE.index(1 + 16 * 15).write(Color::DIM_WHITE);
 
+  //
   BG0CNT.write(BgControl::new().with_screenblock(8));
   for (i, (va, b)) in text_screenblock::<8>()
     .iter()
@@ -91,6 +64,7 @@ extern "C" fn main() -> ! {
     va.write(TextScreenEntry::new().with_tile_id(C).with_palbank(7));
   }
 
+  //
   DISPSTAT.write(DisplayStatus::new().with_vblank_irq(true));
   IE.write(IrqBits::new().with_vblank(true));
   IME.write(true);
@@ -111,14 +85,12 @@ extern "C" fn main() -> ! {
     // update world state
     if k.right() {
       x_off = x_off.wrapping_sub(1);
-    }
-    if k.left() {
+    } else if k.left() {
       x_off = x_off.wrapping_add(1);
     }
     if k.down() {
       y_off = y_off.wrapping_sub(1);
-    }
-    if k.up() {
+    } else if k.up() {
       y_off = y_off.wrapping_add(1);
     }
     if k.l() & !last_k.l() {
