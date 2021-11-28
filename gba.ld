@@ -16,7 +16,27 @@ SECTIONS
     . = ALIGN(4);
   } >rom =0xFF
 
-  .text : {
+  . = ALIGN(4);
+  __textewram_position_in_rom = .;
+  .text.ewram : {
+    . = ALIGN(4);
+    __textewram_start = ABSOLUTE(.);
+    *(.text.ewram .text.ewram.*);
+    . = ALIGN(4);
+    __textewram_end = ABSOLUTE(.);
+  } >ewram AT>rom =0xAA
+
+  . = ALIGN(4);
+  __textiwram_position_in_rom = .;
+  .text.iwram : {
+    . = ALIGN(4);
+    __textiwram_start = ABSOLUTE(.);
+    *(.text.iwram .text.iwram.*);
+    . = ALIGN(4);
+    __textiwram_end = ABSOLUTE(.);
+  } >iwram AT>rom =0xAA
+
+  .text.rom : {
     . = ALIGN(4);
     KEEP(rt0.o(.text*));
     *(.text .text.*);

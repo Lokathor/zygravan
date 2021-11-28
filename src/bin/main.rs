@@ -101,6 +101,8 @@ extern "C" fn main() -> ! {
     }
     last_k = k;
 
+    x_off = x_off.wrapping_sub(1);
+
     /*
     Notes:
     Each screenblock is 32x32 in tiles.
