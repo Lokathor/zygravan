@@ -19,35 +19,7 @@ asm_init:
   @ Pin the DMA3 base address for use in the next 2 operations.
   ldr  r4, =0x040000D4
 
-copy_textewram:
-  ldr r0, =__textewram_start
-  ldr r1, =__textewram_end
-  ldr r2, =__textewram_position_in_rom
-  sub r3, r1, r0            @ r3 = __ewram_end - __ewram_start
-  lsrs r3, r3, #2           @ r3 = r3 / 4
-  beq 1f                    @ if r3 == 0, branch 1f
-  str  r2, [r4]             @ set source address
-  str  r0, [r4, #4]         @ set destination
-  strh r3, [r4, #8]         @ set the count
-  mov  r5, #0x8400          @ 32-bit transfers, DMA enabled
-  strh r5, [r4, #10]        @ set the config bits
-  1:
-
-copy_textiwram:
-  ldr r0, =__textiwram_start
-  ldr r1, =__textiwram_end
-  ldr r2, =__textiwram_position_in_rom
-  sub r3, r1, r0            @ r3 = __ewram_end - __ewram_start
-  lsrs r3, r3, #2           @ r3 = r3 / 4
-  beq 1f                    @ if r3 == 0, branch 1f
-  str  r2, [r4]             @ set source address
-  str  r0, [r4, #4]         @ set destination
-  strh r3, [r4, #8]         @ set the count
-  mov  r5, #0x8400          @ 32-bit transfers, DMA enabled
-  strh r5, [r4, #10]        @ set the config bits
-  1:
-
-  copy_data_from_rom_to_iwram:
+copy_data:
   ldr r0, =__data_start
   ldr r1, =__data_end
   ldr r2, =__data_position_in_rom
@@ -61,7 +33,7 @@ copy_textiwram:
   strh r5, [r4, #10]        @ set the config bits
   1:
 
-copy_data_from_rom_to_ewram:
+copy_ewram:
   ldr r0, =__ewram_start
   ldr r1, =__ewram_end
   ldr r2, =__ewram_position_in_rom
@@ -75,7 +47,7 @@ copy_data_from_rom_to_ewram:
   strh r5, [r4, #10]        @ set the config bits
   1:
 
-zero_the_bss_iwram:
+zero_bss:
   ldr r0, =__bss_start
   ldr r1, =__bss_end
   mov r4, #0
