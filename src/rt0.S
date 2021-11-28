@@ -2,15 +2,18 @@
 .global RUST_IRQ_HANDLER
 
 .arm
+
+.section .text.header
 __asm_entry:
   b asm_init
-
+  
   @ gbafix fills the following blank space in with proper header data when we
   @ decide to make the full rom. Even though we are building a standard rom, we
   @ zero the area all the way out to the end of the multiboot header so that
   @ mGBA doesn't potentially get confused.
-
+  
   .space 0xE0
+.previous
 
 asm_init:
   @ Pin the DMA3 base address for use in the next 2 operations.
@@ -28,7 +31,7 @@ asm_init:
   strh r3, [r4, #8]         @ set the count
   mov  r5, #0x8400          @ 32-bit transfers, DMA enabled
   strh r5, [r4, #10]        @ set the config bits
-1:
+  1:
 
 copy_data_from_rom_to_ewram:
   ldr r0, =__ewram_start
@@ -42,7 +45,7 @@ copy_data_from_rom_to_ewram:
   strh r3, [r4, #8]         @ set the count
   mov  r5, #0x8400          @ 32-bit transfers, DMA enabled
   strh r5, [r4, #10]        @ set the config bits
-1:
+  1:
 
 zero_the_bss_iwram:
   ldr r0, =__bss_start
@@ -50,13 +53,13 @@ zero_the_bss_iwram:
   mov r4, #0
   sub r3, r1, r0
   lsrs r3, r3, #2
-1:
+  1:
   beq 2f
   str r4, [r0]
   add r0, r0, #4
   subs r3, r3, #1
   b 1b
-2:
+  2:
 
 set_the_rt_handler:
   ldr r0, =rt_irq_handler
