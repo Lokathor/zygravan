@@ -45,7 +45,7 @@ SECTIONS
     . = ALIGN(4);
     __bss_start = ABSOLUTE(.);
     KEEP(rt0.o(.bss*));
-    *(.bss .bss.*);
+    *(.bss*);
     . = ALIGN(4);
     __bss_end = ABSOLUTE(.);
   } >iwram =0xAA
