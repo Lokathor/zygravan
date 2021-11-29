@@ -50,17 +50,6 @@ SECTIONS
     __bss_end = ABSOLUTE(.);
   } >iwram =0xAA
 
-  . = ALIGN(4);
-  __ewram_position_in_rom = .;
-  .ewram : {
-    . = ALIGN(4);
-    __ewram_start = ABSOLUTE(.);
-    KEEP(rt0.o(.ewram*));
-    *(.ewram*);
-    . = ALIGN(4);
-    __ewram_end = ABSOLUTE(.);
-  } >ewram AT>rom =0xAA
-
   /DISCARD/ : {
     *(.ARM.exidx.*)
   }
