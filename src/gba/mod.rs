@@ -1,9 +1,9 @@
 use core::{cell::UnsafeCell, mem::size_of};
-use voladdress::{Safe, VolAddress, VolBlock, VolSeries};
+use voladdress::{Safe, VolAddress, VolBlock, VolRegion, VolSeries};
 
 use crate::{
   macros::{const_new, u16_bool_field, u16_enum_field, u16_value_field},
-  Fx, VolRegion,
+  Fx,
 };
 
 mod bios;
@@ -213,6 +213,11 @@ impl<T> GbaCell<T> {
   #[inline]
   pub fn write(&self, t: T) {
     unsafe { self.0.get().write_volatile(t) }
+  }
+  #[inline]
+  #[must_use]
+  pub fn get_ptr(&self) -> *mut T {
+    self.0.get()
   }
 }
 pub type RustIrqFn = extern "C" fn(IrqBits);
@@ -471,3 +476,31 @@ pub const PC: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
 #[rustfmt::skip]
 pub const PD: VolSeries<Fx<i16,8>, Safe, Safe, 32, { size_of::<[u16; 16]>() }> =
   unsafe { VolSeries::new(0x0700_001E) };
+
+#[inline(never)]
+#[link_section = ".iwram"]
+#[instruction_set(arm::a32)]
+pub unsafe fn a32_swp(in_val: u32, ptr: *mut u32) -> u32 {
+  let out_val: u32;
+  asm!(
+    "swp {x}, {x}, [{address}]",
+    address = in(reg) ptr,
+    x = inout(reg) in_val => out_val,
+    options(nostack, preserves_flags),
+  );
+  out_val
+}
+
+#[inline(never)]
+#[link_section = ".iwram"]
+#[instruction_set(arm::a32)]
+pub unsafe fn a32_swpb(in_val: u8, ptr: *mut u8) -> u8 {
+  let out_val: u8;
+  asm!(
+    "swpb {x}, {x}, [{address}]",
+    address = in(reg) ptr,
+    x = inout(reg) in_val => out_val,
+    options(nostack, preserves_flags),
+  );
+  out_val
+}

@@ -7,7 +7,8 @@ license = "AGPL-3.0-only"
 publish = false
 
 [dependencies]
-voladdress = "1"
+voladdress = { version = "1.0.2", features = ["experimental_volregion"] }
+bytemuck = "1"
 
 [profile.dev]
 panic = "abort"

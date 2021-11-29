@@ -3,14 +3,21 @@
 version = 3
 
 [[package]]
-name = "voladdress"
-version = "1.0.0"
+name = "bytemuck"
+version = "1.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f3d40392fcdd64a5ebe1fe948ac9c0c525972c72d15fcf8cf8e224122b3fa0b"
+checksum = "72957246c41db82b8ef88a5486143830adeb8227ef9837740bdec67724cf2c5b"
+
+[[package]]
+name = "voladdress"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2157d0419fef2c1108faed387c36bd7c8364e875965d8286aed94b4e8d068708"
 
 [[package]]
 name = "zygravan"
 version = "0.0.0"
 dependencies = [
+ "bytemuck",
  "voladdress",
 ]

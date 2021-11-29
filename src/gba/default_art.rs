@@ -1,9 +1,6 @@
-use voladdress::Safe;
+use voladdress::{Safe, VolRegion};
 
-use crate::{
-  gba::{LZ77UnCompReadNormalWrite16bit, Tile4},
-  VolRegion,
-};
+use crate::gba::{LZ77UnCompReadNormalWrite16bit, Tile4};
 
 /// Requires 256 tiles of output space.
 pub fn decompress_cp437_data_to(region: VolRegion<Tile4, Safe, Safe>) {

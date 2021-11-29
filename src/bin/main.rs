@@ -4,7 +4,8 @@
 
 use core::mem::size_of_val;
 
-use zygravan::gba::*;
+use bytemuck::cast_slice_mut;
+use zygravan::{gba::*, Ewram};
 
 #[panic_handler]
 fn panic_handler(_info: &core::panic::PanicInfo) -> ! {
@@ -21,6 +22,13 @@ extern "C" fn irq_handler(_bits: IrqBits) {
 #[no_mangle]
 extern "C" fn main() -> ! {
   //
+
+  if let Some(mut ewram) = Ewram::try_new() {
+    let ewram_bytes: &mut [u8] = cast_slice_mut(&mut *ewram);
+    let hello_world = b"HelloWorld";
+    ewram_bytes.iter_mut().zip(hello_world.iter()).for_each(|(e, b)| *e = *b);
+  }
+
   decompress_cp437_data_to(BgCharblock::new(0).tiles4());
 
   //
