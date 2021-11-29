@@ -45,6 +45,5 @@ jobs:
           prerelease: true
           files: zygravan.zip
           fail_on_unmatched_files: true
-          name: ${{ env.GITHUB_SHA }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
