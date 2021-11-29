@@ -19,13 +19,14 @@ SECTIONS
   .text.rom : {
     . = ALIGN(4);
     KEEP(rt0.o(.text*));
-    *(.text .text.*);
+    *(.text*);
     . = ALIGN(4);
   } >rom =0xAA
 
   .rodata : {
     . = ALIGN(4);
-    *(.rodata .rodata.*);
+    KEEP(rt0.o(.rodata*));
+    *(.rodata*);
     . = ALIGN(4);
   } >rom =0xAA
 
@@ -34,8 +35,8 @@ SECTIONS
   .data : {
     . = ALIGN(4);
     __data_start = ABSOLUTE(.);
-    *(.data .data.*);
-    *(.iwram .iwram.*);
+    KEEP(rt0.o(.data* .iwram*));
+    *(.data* .iwram*);
     . = ALIGN(4);
     __data_end = ABSOLUTE(.);
   } >iwram AT>rom =0xAA
@@ -43,17 +44,19 @@ SECTIONS
   .bss : {
     . = ALIGN(4);
     __bss_start = ABSOLUTE(.);
+    KEEP(rt0.o(.bss*));
     *(.bss .bss.*);
     . = ALIGN(4);
     __bss_end = ABSOLUTE(.);
-  } >iwram AT>rom =0xAA
+  } >iwram =0xAA
 
   . = ALIGN(4);
   __ewram_position_in_rom = .;
   .ewram : {
     . = ALIGN(4);
     __ewram_start = ABSOLUTE(.);
-    *(.ewram .ewram.*);
+    KEEP(rt0.o(.ewram*));
+    *(.ewram*);
     . = ALIGN(4);
     __ewram_end = ABSOLUTE(.);
   } >ewram AT>rom =0xAA

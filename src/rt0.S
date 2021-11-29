@@ -120,7 +120,7 @@ rt_irq_handler:
   bx    lr
 .previous
 
-.section .data
+.section .bss
 .align 4
 RUST_IRQ_HANDLER:
   .zero 4
