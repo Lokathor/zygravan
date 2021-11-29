@@ -33,20 +33,6 @@ copy_data:
   strh r5, [r4, #10]        @ set the config bits
   1:
 
-@copy_ewram:
-@  ldr r0, =__ewram_start
-@  ldr r1, =__ewram_end
-@  ldr r2, =__ewram_position_in_rom
-@  sub r3, r1, r0            @ r3 = __ewram_end - __ewram_start
-@  lsrs r3, r3, #2           @ r3 = r3 / 4
-@  beq 1f                    @ if r3 == 0, branch 1f
-@  str  r2, [r4]             @ set source address
-@  str  r0, [r4, #4]         @ set destination
-@  strh r3, [r4, #8]         @ set the count
-@  mov  r5, #0x8400          @ 32-bit transfers, DMA enabled
-@  strh r5, [r4, #10]        @ set the config bits
-@  1:
-
 zero_bss:
   ldr r0, =__bss_start
   ldr r1, =__bss_end
@@ -75,10 +61,9 @@ call_to_rust_main:
   1: b 1b               @ end of program.
 
 .section .iwram
-.arm
+.align 4
 rt_irq_handler:
-  @ assumed: r0 = 0x0400_0000 when the BIOS calls this
-  mov   r0, #0x04000000
+  mov   r0, #0x04000000 @ we could probably remove this and save 1 whole cycle.
 
   add   r2, r0, #0x200
   ldr   r0, [r2]
