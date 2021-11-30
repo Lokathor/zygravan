@@ -1,26 +1,75 @@
 #![no_std]
 #![no_main]
+#![deny(unsafe_code)]
 #![allow(unused_imports)]
 
-use core::mem::size_of_val;
+use core::{fmt::Write, mem::size_of_val};
 
 use bytemuck::cast_slice_mut;
 use zygravan::{gba::*, Ewram};
 
 #[panic_handler]
 fn panic_handler(_info: &core::panic::PanicInfo) -> ! {
-  BACKDROP.write(Color::from_rgb(31, 0, 0));
+  PalRam::backdrop().write(Color::from_rgb(31, 0, 0));
   loop {}
 }
 
-/*
-extern "C" fn irq_handler(_bits: IrqBits) {
-  //
+static VBLANK_COUNTER: GbaCell<u32> = GbaCell::new_u32(0);
+
+extern "C" fn irq_handler(bits: IrqBits) {
+  if bits.vblank() {
+    VBLANK_COUNTER.write(VBLANK_COUNTER.read().wrapping_add(1));
+  }
 }
-*/
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TerminalPanel {
+  block: TextScreenblock,
+  position: u16,
+  palbank: u16,
+}
+impl TerminalPanel {
+  pub const fn from_screenblock(block: TextScreenblock) -> Self {
+    Self { block, position: 0, palbank: 0 }
+  }
+  pub fn set_palbank(&mut self, palbank: u16) {
+    self.palbank = palbank;
+  }
+}
+impl core::fmt::Write for TerminalPanel {
+  fn write_str(&mut self, s: &str) -> core::fmt::Result {
+    for b in s.as_bytes().iter().copied() {
+      match b {
+        b'\n' => {
+          self.position = ((self.position / 32) + 1) * 32;
+        }
+        other => {
+          self
+            .block
+            .as_volblock()
+            .index(self.position as usize)
+            .write(TextScreenEntry::from_id_bank(other as u16, self.palbank));
+          self.position += 1;
+          if (self.position % 32) == 30 {
+            // advance to next row
+            self.position += 2;
+          }
+        }
+      }
+      //
+      if (self.position / 32) == 20 {
+        // reset to the first line
+        self.position = 0;
+      }
+    }
+    //
+    Ok(())
+  }
+}
 
 #[no_mangle]
-extern "C" fn main() -> ! {
+#[allow(unsafe_code)]
+pub extern "C" fn main() -> ! {
   //
 
   if let Some(mut ewram) = Ewram::try_new() {
@@ -29,50 +78,59 @@ extern "C" fn main() -> ! {
     ewram_bytes.iter_mut().zip(hello_world.iter()).for_each(|(e, b)| *e = *b);
   }
 
-  decompress_cp437_data_to(BgCharblock::new(0).tiles4());
+  decompress_cp437_data_to(BgCharblock::_0.tiles4());
 
   //
   let pink = Color::from_rgb(28, 15, 15);
   for x in 0..16 {
-    BG_PALETTE.index(0 + 16 * x).write(pink);
+    PalRam::bg_palbank(x).index(0).write(pink);
   }
 
   //
-  BG_PALETTE.index(1 + 16 * 0).write(Color::BLACK);
-  BG_PALETTE.index(1 + 16 * 1).write(Color::RED);
-  BG_PALETTE.index(1 + 16 * 2).write(Color::GREEN);
-  BG_PALETTE.index(1 + 16 * 3).write(Color::YELLOW);
-  BG_PALETTE.index(1 + 16 * 4).write(Color::BLUE);
-  BG_PALETTE.index(1 + 16 * 5).write(Color::MAGENTA);
-  BG_PALETTE.index(1 + 16 * 6).write(Color::CYAN);
-  BG_PALETTE.index(1 + 16 * 7).write(Color::WHITE);
-  BG_PALETTE.index(1 + 16 * 8).write(Color::DIM_BLACK);
-  BG_PALETTE.index(1 + 16 * 9).write(Color::DIM_RED);
-  BG_PALETTE.index(1 + 16 * 10).write(Color::DIM_GREEN);
-  BG_PALETTE.index(1 + 16 * 11).write(Color::DIM_YELLOW);
-  BG_PALETTE.index(1 + 16 * 12).write(Color::DIM_BLUE);
-  BG_PALETTE.index(1 + 16 * 13).write(Color::DIM_MAGENTA);
-  BG_PALETTE.index(1 + 16 * 14).write(Color::DIM_CYAN);
-  BG_PALETTE.index(1 + 16 * 15).write(Color::DIM_WHITE);
+  PalRam::bg_palbank(0).index(1).write(Color::BLACK);
+  PalRam::bg_palbank(1).index(1).write(Color::RED);
+  PalRam::bg_palbank(2).index(1).write(Color::GREEN);
+  PalRam::bg_palbank(3).index(1).write(Color::YELLOW);
+  PalRam::bg_palbank(4).index(1).write(Color::BLUE);
+  PalRam::bg_palbank(5).index(1).write(Color::MAGENTA);
+  PalRam::bg_palbank(6).index(1).write(Color::CYAN);
+  PalRam::bg_palbank(7).index(1).write(Color::WHITE);
+  PalRam::bg_palbank(8).index(1).write(Color::DIM_BLACK);
+  PalRam::bg_palbank(9).index(1).write(Color::DIM_RED);
+  PalRam::bg_palbank(10).index(1).write(Color::DIM_GREEN);
+  PalRam::bg_palbank(11).index(1).write(Color::DIM_YELLOW);
+  PalRam::bg_palbank(12).index(1).write(Color::DIM_BLUE);
+  PalRam::bg_palbank(13).index(1).write(Color::DIM_MAGENTA);
+  PalRam::bg_palbank(14).index(1).write(Color::DIM_CYAN);
+  PalRam::bg_palbank(15).index(1).write(Color::DIM_WHITE);
+
+  // TODO: the terminal panel should just be some arrays or whatever, but
+  // writing to the terminal panel should not directly write to VRAM. Instead,
+  // writes to the terminal panel should fill an array which we send to the vram
+  // during a vblank. This separation prevents vram modifications during vdraw.
 
   //
   BG0CNT.write(BgControl::new().with_screenblock(8));
-  for (i, (va, b)) in text_screenblock::<8>()
-    .iter()
-    .zip(b"Brights!AndDims!".iter().copied())
-    .enumerate()
-  {
-    va.write(
-      TextScreenEntry::new().with_tile_id(b as u16).with_palbank(i as u16),
-    );
+
+  let mut panel = TerminalPanel::from_screenblock(TextScreenblock::_8);
+  for (ch, palbank) in "Brights!AndDims!".chars().zip(0..) {
+    panel.set_palbank(palbank);
+    write!(panel, "{}", ch).unwrap();
   }
+  panel.set_palbank(0);
+  writeln!(panel, "\nAnotherLine").unwrap();
+  writeln!(panel, ".....|||||-----/////^^^^^%%%%%").unwrap();
+  write!(panel, "@").unwrap();
+  //
+  /*
   BG1CNT.write(BgControl::new().with_screenblock(9));
-  for va in text_screenblock::<9>().iter() {
-    const C: u16 = 16 * 13 + 11;
-    va.write(TextScreenEntry::new().with_tile_id(C).with_palbank(7));
-  }
+  let full_block =
+    TextScreenEntry::new().with_tile_id(16 * 13 + 11).with_palbank(7);
+  TextScreenblock::_9.write_all(full_block);
+  // */
 
   //
+  set_irq_handler(Some(irq_handler));
   DISPSTAT.write(DisplayStatus::new().with_vblank_irq(true));
   IE.write(IrqBits::new().with_vblank(true));
   IME.write(true);
@@ -109,7 +167,9 @@ extern "C" fn main() -> ! {
     }
     last_k = k;
 
-    x_off = x_off.wrapping_sub(1);
+    if (VBLANK_COUNTER.read() % 64) == 1 {
+      //x_off = x_off.wrapping_sub(1);
+    }
 
     /*
     Notes:
