@@ -1,11 +1,11 @@
 #![no_std]
 #![no_main]
+#![allow(unused)]
 #![deny(unsafe_code)]
-#![allow(unused_imports)]
 
 use core::{fmt::Write, mem::size_of_val};
 
-use bytemuck::cast_slice_mut;
+use bytemuck::{cast_slice, cast_slice_mut};
 use zygravan::{gba::*, Ewram};
 
 #[panic_handler]
@@ -24,45 +24,67 @@ extern "C" fn irq_handler(bits: IrqBits) {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TerminalPanel {
-  block: TextScreenblock,
-  position: u16,
-  palbank: u16,
+  chars: [u32; (32 * 32) / 4],
+  banks: [u32; (32 * 32) / 4],
+  position: u32,
 }
 impl TerminalPanel {
-  pub const fn from_screenblock(block: TextScreenblock) -> Self {
-    Self { block, position: 0, palbank: 0 }
+  #[inline]
+  #[must_use]
+  pub const fn new() -> Self {
+    Self {
+      chars: [0_u32; (32 * 32) / 4],
+      banks: [0_u32; (32 * 32) / 4],
+      position: 0,
+    }
   }
-  pub fn set_palbank(&mut self, palbank: u16) {
-    self.palbank = palbank;
+  #[inline]
+  pub fn set_all_chars(&mut self, ch: char) {
+    let b = ch as u8;
+    let u = u32::from_ne_bytes([b, b, b, b]);
+    self.chars.iter_mut().for_each(|ch| *ch = u);
   }
-}
-impl core::fmt::Write for TerminalPanel {
-  fn write_str(&mut self, s: &str) -> core::fmt::Result {
-    for b in s.as_bytes().iter().copied() {
-      match b {
-        b'\n' => {
-          self.position = ((self.position / 32) + 1) * 32;
-        }
+  #[inline]
+  pub fn set_all_banks(&mut self, b: u8) {
+    let u = u32::from_ne_bytes([b, b, b, b]);
+    self.banks.iter_mut().for_each(|bank| *bank = u);
+  }
+  #[inline]
+  pub fn change_line(&mut self, delta: i32) {
+    self.position =
+      ((self.position >> 5).wrapping_add(delta as u32) << 5) % (32 * 32);
+  }
+  #[inline]
+  pub fn push_bytes(&mut self, bytes: &[u8]) {
+    for byte in bytes.iter().copied() {
+      match byte {
+        b'\n' => self.change_line(1),
         other => {
-          self
-            .block
-            .as_volblock()
-            .index(self.position as usize)
-            .write(TextScreenEntry::from_id_bank(other as u16, self.palbank));
+          let bytes: &mut [u8] = cast_slice_mut::<u32, u8>(&mut self.chars);
+          bytes[self.position as usize] = other;
           self.position += 1;
           if (self.position % 32) == 30 {
-            // advance to next row
-            self.position += 2;
+            self.change_line(1);
           }
         }
       }
-      //
-      if (self.position / 32) == 20 {
-        // reset to the first line
-        self.position = 0;
-      }
     }
-    //
+  }
+  #[inline]
+  #[must_use]
+  pub fn scroll_point(&self) -> u16 {
+    0_u16.wrapping_sub((19 - (self.position >> 5) as u16) * 8)
+  }
+}
+impl core::fmt::Write for TerminalPanel {
+  #[inline]
+  fn write_str(&mut self, s: &str) -> core::fmt::Result {
+    self.push_bytes(s.as_bytes());
+    Ok(())
+  }
+  #[inline]
+  fn write_char(&mut self, c: char) -> core::fmt::Result {
+    self.push_bytes(core::slice::from_ref(&(c as u8)));
     Ok(())
   }
 }
@@ -79,6 +101,8 @@ pub extern "C" fn main() -> ! {
   }
 
   decompress_cp437_data_to(BgCharblock::_0.tiles4());
+
+  // TODO: put some stuff into OBJ tile memory.
 
   //
   let pink = Color::from_rgb(28, 15, 15);
@@ -104,30 +128,16 @@ pub extern "C" fn main() -> ! {
   PalRam::bg_palbank(14).index(1).write(Color::DIM_CYAN);
   PalRam::bg_palbank(15).index(1).write(Color::DIM_WHITE);
 
-  // TODO: the terminal panel should just be some arrays or whatever, but
-  // writing to the terminal panel should not directly write to VRAM. Instead,
-  // writes to the terminal panel should fill an array which we send to the vram
-  // during a vblank. This separation prevents vram modifications during vdraw.
-
   //
   BG0CNT.write(BgControl::new().with_screenblock(8));
 
-  let mut panel = TerminalPanel::from_screenblock(TextScreenblock::_8);
-  for (ch, palbank) in "Brights!AndDims!".chars().zip(0..) {
-    panel.set_palbank(palbank);
-    write!(panel, "{}", ch).unwrap();
-  }
-  panel.set_palbank(0);
-  writeln!(panel, "\nAnotherLine").unwrap();
-  writeln!(panel, ".....|||||-----/////^^^^^%%%%%").unwrap();
-  write!(panel, "@").unwrap();
-  //
-  /*
-  BG1CNT.write(BgControl::new().with_screenblock(9));
-  let full_block =
-    TextScreenEntry::new().with_tile_id(16 * 13 + 11).with_palbank(7);
-  TextScreenblock::_9.write_all(full_block);
-  // */
+  let mut panel = TerminalPanel::new();
+  //panel.set_all_chars('.');
+  writeln!(panel, "Hello World!").unwrap();
+  writeln!(panel, "Another line of text.").unwrap();
+  writeln!(panel, "This line of text is in excess of thirty characters.")
+    .unwrap();
+  write!(panel, ">").unwrap();
 
   //
   set_irq_handler(Some(irq_handler));
@@ -154,6 +164,7 @@ pub extern "C" fn main() -> ! {
     } else if k.left() {
       x_off = x_off.wrapping_add(1);
     }
+    /*
     if k.down() {
       y_off = y_off.wrapping_sub(1);
     } else if k.up() {
@@ -165,19 +176,14 @@ pub extern "C" fn main() -> ! {
     if k.r() & !last_k.r() {
       y_off = y_off.wrapping_sub(8);
     }
+    */
     last_k = k;
 
     if (VBLANK_COUNTER.read() % 64) == 1 {
       //x_off = x_off.wrapping_sub(1);
     }
 
-    /*
-    Notes:
-    Each screenblock is 32x32 in tiles.
-    The display itself is 30x20 in tiles (240x160 px)
-    The screenblock will wrap around
-    So we can do a rolling output in a single screenblock.
-    */
+    y_off = panel.scroll_point();
 
     // wait for v_blank to begin
     VBlankIntrWait();
@@ -185,5 +191,17 @@ pub extern "C" fn main() -> ! {
     // Update the display
     BG0_X.write(x_off);
     BG0_Y.write(y_off);
+    TextScreenblock::_8
+      .as_volblock()
+      .iter()
+      .zip(
+        cast_slice::<u32, u8>(&panel.chars)
+          .iter()
+          .copied()
+          .zip(cast_slice::<u32, u8>(&panel.banks).iter().copied()),
+      )
+      .for_each(|(va, (ch, p))| {
+        va.write(TextScreenEntry::from_id_bank(ch as u16, p as u16))
+      });
   }
 }
